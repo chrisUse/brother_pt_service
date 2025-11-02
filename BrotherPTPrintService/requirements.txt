@@ -1,0 +1,6 @@
+fastapi==0.120.4
+uvicorn[standard]==0.38.0
+pydantic==2.12.3
+pillow>=10.0.0
+pyusb>=1.2.1
+packbits>=0.6

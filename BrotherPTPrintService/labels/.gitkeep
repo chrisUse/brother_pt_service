@@ -1,0 +1,10 @@
+# Label Backup Directory
+
+This directory stores PNG backups of all printed labels for documentation and reference purposes.
+
+Files are automatically named with timestamp: `tech_{type}_{MMDD_HHMMSS}.png`
+
+Examples:
+- `tech_cable_1102_143022.png`
+- `tech_device_1102_143045.png`  
+- `tech_warning_1102_143112.png`

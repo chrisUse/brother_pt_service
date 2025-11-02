@@ -1,0 +1,47 @@
+services:
+  brother-label-api:
+    build: .
+    container_name: brother-pt-api
+    ports:
+      - "8000:8000"
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"  # USB device access
+    volumes:
+      - "./labels:/app/labels"       # Label backup storage
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    privileged: true                 # Full USB access
+    user: root                       # Run as root for USB access
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - brother-network
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: brother-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro  # SSL certificates (optional)
+    depends_on:
+      - brother-label-api
+    restart: unless-stopped
+    networks:
+      - brother-network
+
+networks:
+  brother-network:
+    driver: bridge
+
+volumes:
+  label_storage:
+    driver: local

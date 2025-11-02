@@ -1,0 +1,43 @@
+# Docker Compose Production Configuration
+
+services:
+  brother-label-api:
+    # Production overrides
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=0
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    # Enable nginx in production
+    profiles: ["production"]
+    restart: unless-stopped
+    # Production logging
+    logging:
+      driver: "json-file"  
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  brother-network:
+    driver: bridge
+
+volumes:
+  label_storage:
+    driver: local
