@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 from brother_pt.printer import BrotherPt
 from brother_pt.cmd import MediaWidthToTapeMargin, PRINT_HEAD_PINS
-from typing import Optional
+from typing import Optional, List
 import uvicorn
 import logging
 
@@ -45,6 +45,12 @@ class WarningLabelRequest(BaseModel):
 class TextLabelRequest(BaseModel):
     text: str
     font_size: Optional[int] = 14  # Größere Standardschrift
+
+class BatchTextLabelRequest(BaseModel):
+    texts: List[str]  # Liste von Texten für Labels
+    font_size: Optional[int] = 14  # Globale Schriftgröße
+    separator_margin: Optional[int] = 30  # Pixel zwischen Labels (Papiervorschub)
+    print_individually: Optional[bool] = True  # Einzeln drucken oder als ein Label
 
 class PrintResponse(BaseModel):
     success: bool
@@ -255,6 +261,57 @@ class BrotherDockerAPI:
         
         return img
     
+    def create_batch_text_labels(self, request: BatchTextLabelRequest) -> List[Image.Image]:
+        """Erstellt mehrere Text-Labels mit einheitlicher Konfiguration"""
+        
+        labels = []
+        
+        for text in request.texts:
+            # Einzelnes Label mit globalen Einstellungen erstellen
+            single_request = TextLabelRequest(
+                text=text,
+                font_size=request.font_size
+            )
+            label_image = self.create_simple_text_label(single_request)
+            labels.append(label_image)
+        
+        return labels
+    
+    def print_batch_labels(self, images: List[Image.Image], separator_margin: int, label_type: str) -> PrintResponse:
+        """Druckt mehrere Labels mit konfigurierbare Abstände"""
+        
+        if not self.is_ready:
+            raise HTTPException(status_code=503, detail="Printer not ready")
+        
+        try:
+            printed_files = []
+            
+            for i, image in enumerate(images):
+                # PNG-Backup erstellen
+                timestamp = datetime.now().strftime("%m%d_%H%M%S")
+                filename = f"/app/labels/batch_{label_type}_{i+1:02d}_{timestamp}.png"
+                image.save(filename, 'PNG')
+                printed_files.append(os.path.basename(filename))
+                
+                # Label drucken
+                logger.info(f"🖨️ Printing batch label {i+1}/{len(images)}...")
+                self.printer.print_image(image, separator_margin)
+                
+                # Kurze Pause zwischen Labels (außer beim letzten)
+                if i < len(images) - 1:
+                    import time
+                    time.sleep(0.5)
+            
+            return PrintResponse(
+                success=True,
+                message=f"Batch of {len(images)} {label_type} labels printed successfully",
+                filename=f"{len(printed_files)} files: " + ", ".join(printed_files[:3]) + ("..." if len(printed_files) > 3 else "")
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Batch print error: {e}")
+            raise HTTPException(status_code=500, detail=f"Batch print failed: {e}")
+    
     def print_label_image(self, image: Image.Image, label_type: str) -> PrintResponse:
         """Print label and create backup"""
         if not self.is_ready:
@@ -326,7 +383,9 @@ async def root():
             "status": "/status - Printer status",
             "cable": "POST /print/cable - Cable labels for electricians",
             "device": "POST /print/device - Device labels for IT technicians",
-            "warning": "POST /print/warning - Safety/warning labels"
+            "warning": "POST /print/warning - Safety/warning labels",
+            "text": "POST /print/text - Simple text labels with large font",
+            "batch": "POST /print/batch - Batch print multiple text labels"
         }
     }
 
@@ -384,6 +443,37 @@ async def print_simple_text_label(request: TextLabelRequest):
     
     image = printer_service.create_simple_text_label(request)
     return printer_service.print_label_image(image, "text")
+
+@app.post("/print/batch", response_model=PrintResponse, tags=["Labels"])
+async def print_batch_text_labels(request: BatchTextLabelRequest):
+    """
+    Druckt mehrere Text-Labels mit einheitlicher Konfiguration
+    
+    - **texts**: Liste von Texten (z.B. ["Büro 1", "Büro 2", "Büro 3"])
+    - **font_size**: Globale Schriftgröße für alle Labels (Standard: 14)
+    - **separator_margin**: Abstand zwischen Labels in Pixel (Standard: 30)
+    - **print_individually**: Jedes Label einzeln drucken (Standard: true)
+    
+    **Beispiele:**
+    ```json
+    {
+      "texts": ["Server Rack A", "Server Rack B", "Server Rack C"],
+      "font_size": 16,
+      "separator_margin": 50
+    }
+    ```
+    """
+    if not printer_service:
+        raise HTTPException(status_code=503, detail="Printer service unavailable")
+    
+    if not request.texts:
+        raise HTTPException(status_code=400, detail="Mindestens ein Text erforderlich")
+    
+    # Labels erstellen
+    images = printer_service.create_batch_text_labels(request)
+    
+    # Batch drucken
+    return printer_service.print_batch_labels(images, request.separator_margin, "batch_text")
 
 if __name__ == "__main__":
     uvicorn.run(

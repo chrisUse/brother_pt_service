@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 # System dependencies für USB, Fonts, Git und Pillow build dependencies
 RUN apt-get update && apt-get install -y \
@@ -25,13 +25,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Clone Brother PT repository (correct structure with nested folder)
-RUN git clone https://github.com/treideme/brother_pt.git /app/brother_pt_repo \
-    && cp -r /app/brother_pt_repo/brother_pt /app/brother_pt \
-    && rm -rf /app/brother_pt_repo \
-    && echo "Brother PT library structure corrected"
+# EINFACH: Brother PT direkt als Git Submodule klonen
+RUN git clone https://github.com/treideme/brother_pt.git brother_pt
 
-# Copy only application files (not brother_pt folder)
+# Copy application files
 COPY brother_docker_api.py .
 COPY brother_fastapi.py .
 
@@ -46,6 +43,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/status || exit 1
 
 # Stay as root for USB access (override in docker-compose if needed)
+
+# Debug brother_pt before starting
+RUN echo "=== FINAL BROTHER_PT CHECK BEFORE START ===" \
+    && ls -la /app/ \
+    && echo "=== BROTHER_PT CONTENT ===" \
+    && ls -la /app/brother_pt/ 2>/dev/null || echo "ERROR: brother_pt folder missing!" \
+    && echo "=== PYTHON PATH CHECK ===" \
+    && python3 -c "import sys; print('Python path:', sys.path)"
 
 # Start FastAPI with uvicorn
 CMD ["uvicorn", "brother_docker_api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
