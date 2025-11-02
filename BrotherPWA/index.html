@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brother PT Label Generator</title>
+    <meta name="description" content="Professioneller Label-Generator für Elektriker und IT-Techniker">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1976d2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Label Generator">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <h1>🏷️ Brother PT Label Generator</h1>
+                <div class="status" id="status">
+                    <span class="status-indicator" id="statusIndicator">⚫</span>
+                    <span id="statusText">Verbinde...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- Label Type Selector -->
+                <section class="label-selector">
+                    <h2>Label-Typ auswählen</h2>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="text">📄 Text</button>
+                        <button class="tab-btn" data-tab="cable">⚡ Kabel</button>
+                        <button class="tab-btn" data-tab="device">💻 Gerät</button>
+                        <button class="tab-btn" data-tab="warning">⚠️ Warnung</button>
+                        <button class="tab-btn" data-tab="batch">📦 Batch</button>
+                    </div>
+                </section>
+
+                <!-- Forms Container -->
+                <section class="forms-container">
+                    
+                    <!-- Text Label Form -->
+                    <div class="form-panel active" id="textForm">
+                        <h3>Einfaches Text-Label</h3>
+                        <form class="label-form">
+                            <div class="form-group">
+                                <label for="textContent">Text:</label>
+                                <input type="text" id="textContent" placeholder="z.B. Server Rack A" maxlength="50" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="textFontSize">Schriftgröße:</label>
+                                <input type="range" id="textFontSize" min="8" max="24" value="14">
+                                <span class="range-value" id="textFontSizeValue">14px</span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">🖨️ Label drucken</button>
+                        </form>
+                    </div>
+
+                    <!-- Cable Label Form -->
+                    <div class="form-panel" id="cableForm">
+                        <h3>Kabel-Label für Elektriker</h3>
+                        <form class="label-form">
+                            <div class="form-group">
+                                <label for="cableType">Kabel-Typ:</label>
+                                <input type="text" id="cableType" placeholder="z.B. NYM-J 3x1.5" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cableVoltage">Spannung:</label>
+                                <input type="text" id="cableVoltage" placeholder="z.B. 230V">
+                            </div>
+                            <div class="form-group">
+                                <label for="cableDestination">Ziel:</label>
+                                <input type="text" id="cableDestination" placeholder="z.B. Büro 123">
+                            </div>
+                            <div class="form-group">
+                                <label for="cableColorCode">Farbkodierung:</label>
+                                <input type="text" id="cableColorCode" placeholder="z.B. L1-Braun, N-Blau, PE-Grün/Gelb">
+                            </div>
+                            <button type="submit" class="btn btn-primary">🖨️ Kabel-Label drucken</button>
+                        </form>
+                    </div>
+
+                    <!-- Device Label Form -->
+                    <div class="form-panel" id="deviceForm">
+                        <h3>Geräte-Label für IT-Techniker</h3>
+                        <form class="label-form">
+                            <div class="form-group">
+                                <label for="deviceName">Gerätename:</label>
+                                <input type="text" id="deviceName" placeholder="z.B. Switch-24P-01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="deviceIP">IP-Adresse:</label>
+                                <input type="text" id="deviceIP" placeholder="z.B. 192.168.1.100" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
+                            </div>
+                            <div class="form-group">
+                                <label for="deviceMAC">MAC-Adresse:</label>
+                                <input type="text" id="deviceMAC" placeholder="z.B. 00:1B:44:11:3A:B7">
+                            </div>
+                            <div class="form-group">
+                                <label for="deviceModel">Modell/Rack:</label>
+                                <input type="text" id="deviceModel" placeholder="z.B. Cisco SG300-24">
+                            </div>
+                            <button type="submit" class="btn btn-primary">🖨️ Geräte-Label drucken</button>
+                        </form>
+                    </div>
+
+                    <!-- Warning Label Form -->
+                    <div class="form-panel" id="warningForm">
+                        <h3>Warnungs-Label</h3>
+                        <form class="label-form">
+                            <div class="form-group">
+                                <label for="warningText">Warnungstext:</label>
+                                <input type="text" id="warningText" placeholder="z.B. HOCHSPANNUNG" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="warningVoltage">Spannung:</label>
+                                <input type="text" id="warningVoltage" placeholder="z.B. 400V">
+                            </div>
+                            <div class="form-group">
+                                <label for="warningIcon">Icon:</label>
+                                <select id="warningIcon">
+                                    <option value="⚠️">⚠️ Allgemeine Warnung</option>
+                                    <option value="⚡">⚡ Hochspannung</option>
+                                    <option value="🔥">🔥 Brandgefahr</option>
+                                    <option value="☢️">☢️ Strahlungsgefahr</option>
+                                    <option value="🚫">🚫 Verboten</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-warning">🖨️ Warnungs-Label drucken</button>
+                        </form>
+                    </div>
+
+                    <!-- Batch Label Form -->
+                    <div class="form-panel" id="batchForm">
+                        <h3>Batch-Labels (mehrere auf einmal)</h3>
+                        <form class="label-form">
+                            <div class="form-group">
+                                <label for="batchTexts">Texte (einer pro Zeile):</label>
+                                <textarea id="batchTexts" rows="6" placeholder="Server Rack A&#10;Server Rack B&#10;Grid Input&#10;Grid Output&#10;Modbus SM-1" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="batchFontSize">Schriftgröße:</label>
+                                <input type="range" id="batchFontSize" min="8" max="24" value="14">
+                                <span class="range-value" id="batchFontSizeValue">14px</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="batchSeparator">Trenner-Abstand:</label>
+                                <input type="range" id="batchSeparator" min="2" max="20" value="8">
+                                <span class="range-value" id="batchSeparatorValue">8px</span>
+                            </div>
+                            <div class="batch-preview" id="batchPreview">
+                                <strong>Labels:</strong> <span id="batchCount">0</span>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-large">🖨️ Alle Labels auf einmal drucken</button>
+                        </form>
+                    </div>
+
+                </section>
+
+                <!-- Results -->
+                <section class="results" id="results" style="display: none;">
+                    <h3>Druckergebnis</h3>
+                    <div class="result-content" id="resultContent">
+                        <!-- Dynamisch gefüllt -->
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>Brother PT-E550W Label Generator PWA | 
+                   <span id="printerStatus">Drucker-Status wird geladen...</span>
+                </p>
+                <button class="btn btn-secondary" id="installBtn" style="display: none;">📱 App installieren</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Label wird gedruckt...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

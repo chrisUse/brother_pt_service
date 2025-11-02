@@ -1,0 +1,83 @@
+{
+  "name": "Brother PT Label Generator",
+  "short_name": "PT Labels",
+  "description": "Professioneller Label-Generator für Brother PT-E550W Drucker. Für Elektriker und IT-Techniker.",
+  "version": "1.0.0",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#1976d2",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "de-DE",
+  
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  
+  "categories": ["business", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Text Label",
+      "short_name": "Text",
+      "description": "Einfaches Text-Label drucken",
+      "url": "/?tab=text",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Kabel Label",
+      "short_name": "Kabel",
+      "description": "Kabel-Label für Elektriker",
+      "url": "/?tab=cable",
+      "icons": [
+        {
+          "src": "icon-192.png", 
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Batch Labels",
+      "short_name": "Batch",
+      "description": "Mehrere Labels auf einmal drucken",
+      "url": "/?tab=batch",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  
+  "screenshots": [
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "screenshot-desktop.png", 
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}
