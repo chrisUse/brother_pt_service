@@ -5,14 +5,14 @@ services:
     ports:
       - "8000:8000"
     devices:
-      - "/dev/bus/usb:/dev/bus/usb"  # USB device access
+      - "/dev/bus/usb:/dev/bus/usb"
     volumes:
-      - "./labels:/app/labels"       # Label backup storage
+      - "./labels:/app/labels"
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
-    privileged: true                 # Full USB access
-    user: root                       # Run as root for USB access
+    privileged: true
+    user: root
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/status"]
       interval: 30s

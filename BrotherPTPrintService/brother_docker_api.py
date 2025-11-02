@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # Pydantic Models
 class CableLabelRequest(BaseModel):
     cable_type: str
-    voltage: Optional[str] = None
+    voltage: Optional[str] = None 
     destination: Optional[str] = None
     color_code: Optional[str] = None
 
@@ -49,7 +49,7 @@ class TextLabelRequest(BaseModel):
 class BatchTextLabelRequest(BaseModel):
     texts: List[str]  # Liste von Texten für Labels
     font_size: Optional[int] = 14  # Globale Schriftgröße
-    separator_margin: Optional[int] = 30  # Pixel zwischen Labels (Papiervorschub)
+    separator_margin: Optional[int] = 4   # Pixel zwischen Labels (schmal für Bandersparnis)
     print_individually: Optional[bool] = True  # Einzeln drucken oder als ein Label
 
 class PrintResponse(BaseModel):
@@ -278,39 +278,70 @@ class BrotherDockerAPI:
         return labels
     
     def print_batch_labels(self, images: List[Image.Image], separator_margin: int, label_type: str) -> PrintResponse:
-        """Druckt mehrere Labels mit konfigurierbare Abstände"""
+        """Druckt mehrere Labels als zusammenhängendes Band mit Trennern"""
         
         if not self.is_ready:
             raise HTTPException(status_code=503, detail="Printer not ready")
         
         try:
-            printed_files = []
+            # Alle Labels zu einem kontinuierlichen Band zusammenfügen
+            combined_image = self.combine_images_to_continuous_band(images, separator_margin)
             
-            for i, image in enumerate(images):
-                # PNG-Backup erstellen
-                timestamp = datetime.now().strftime("%m%d_%H%M%S")
-                filename = f"/app/labels/batch_{label_type}_{i+1:02d}_{timestamp}.png"
-                image.save(filename, 'PNG')
-                printed_files.append(os.path.basename(filename))
-                
-                # Label drucken
-                logger.info(f"🖨️ Printing batch label {i+1}/{len(images)}...")
-                self.printer.print_image(image, separator_margin)
-                
-                # Kurze Pause zwischen Labels (außer beim letzten)
-                if i < len(images) - 1:
-                    import time
-                    time.sleep(0.5)
+            # PNG-Backup des kombinierten Bandes erstellen
+            timestamp = datetime.now().strftime("%m%d_%H%M%S")
+            filename = f"/app/labels/batch_{label_type}_combined_{timestamp}.png"
+            combined_image.save(filename, 'PNG')
+            
+            # Gesamtes Band in einem Druckjob drucken
+            logger.info(f"🖨️ Printing continuous batch of {len(images)} labels...")
+            self.printer.print_image(combined_image, 0)  # Kein extra Margin, da schon eingebaut
             
             return PrintResponse(
                 success=True,
-                message=f"Batch of {len(images)} {label_type} labels printed successfully",
-                filename=f"{len(printed_files)} files: " + ", ".join(printed_files[:3]) + ("..." if len(printed_files) > 3 else "")
+                message=f"Continuous batch of {len(images)} {label_type} labels printed successfully (saves label tape!)",
+                filename=os.path.basename(filename)
             )
             
         except Exception as e:
-            logger.error(f"❌ Batch print error: {e}")
-            raise HTTPException(status_code=500, detail=f"Batch print failed: {e}")
+            logger.error(f"❌ Batch printing failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Batch printing failed: {str(e)}")
+    
+    def combine_images_to_continuous_band(self, images: List[Image.Image], separator_margin: int) -> Image.Image:
+        """Kombiniert mehrere Label-Bilder zu einem kontinuierlichen Band mit Trennern"""
+        
+        if not images:
+            raise ValueError("No images to combine")
+        
+        # Höhe ist die maximale Höhe aller Labels (sollte gleich sein für Brother PT)
+        max_height = max(img.height for img in images)
+        
+        # Breite berechnen: alle Labels + dünne 2px Trennstriche zwischen ihnen
+        total_width = sum(img.width for img in images) + (2 * (len(images) - 1))
+        
+        # Brother PT Format für 1-bit Bilder: 0=schwarz (drucken), 1=weiß (kein Druck)  
+        # Kombiniertes Bild mit schwarzem Hintergrund wie die einzelnen Labels
+        combined = Image.new('1', (total_width, max_height), 0)
+        
+        # Labels nacheinander einfügen mit dünnen schwarzen Trennstrichen
+        x_offset = 0
+        separator_line_width = 2  # Dünner schwarzer Trennstrich (2 Pixel breit)
+        
+        for i, img in enumerate(images):
+            # Label einfügen
+            combined.paste(img, (x_offset, 0))
+            x_offset += img.width
+            
+            # Dünnen weißen Trennstrich hinzufügen (außer nach dem letzten Label)
+            if i < len(images) - 1:
+                # 2 Pixel weißer Strich (1 = weiß im 1-bit Modus)
+                for x in range(2):
+                    for y in range(max_height):
+                        combined.putpixel((x_offset + x, y), 1)  # Weißer Trennstrich
+                
+                x_offset += 2  # Nur die 2 Pixel des Strichs
+        
+        logger.info(f"📏 Combined {len(images)} labels into {total_width}x{max_height}px continuous band")
+        return combined
     
     def print_label_image(self, image: Image.Image, label_type: str) -> PrintResponse:
         """Print label and create backup"""

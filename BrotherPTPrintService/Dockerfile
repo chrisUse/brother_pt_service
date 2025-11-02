@@ -25,8 +25,18 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# EINFACH: Brother PT direkt als Git Submodule klonen
-RUN git clone https://github.com/treideme/brother_pt.git brother_pt
+# Brother PT Repository klonen und korrekt extrahieren
+RUN git clone https://github.com/treideme/brother_pt.git /tmp/brother_pt_repo && \
+    echo "=== REPO STRUCTURE ===" && \
+    ls -la /tmp/brother_pt_repo/ && \
+    ls -la /tmp/brother_pt_repo/brother_pt/ && \
+    echo "=== COPYING INNER MODULE ===" && \
+    cp -r /tmp/brother_pt_repo/brother_pt /app/brother_pt && \
+    rm -rf /tmp/brother_pt_repo && \
+    echo "=== FINAL STRUCTURE ===" && \
+    ls -la /app/brother_pt/ && \
+    echo "=== TESTING IMPORT ===" && \
+    python3 -c "import sys; sys.path.insert(0, '/app'); from brother_pt.printer import BrotherPt; print('✅ SUCCESS: Brother PT works!')"
 
 # Copy application files
 COPY brother_docker_api.py .
