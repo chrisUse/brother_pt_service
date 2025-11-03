@@ -47,6 +47,7 @@
                         <button class="tab-btn" data-tab="device">💻 Gerät</button>
                         <button class="tab-btn" data-tab="warning">⚠️ Warnung</button>
                         <button class="tab-btn" data-tab="batch">📦 Batch</button>
+                        <button class="tab-btn" data-tab="custom">🎨 Custom</button>
                     </div>
                 </section>
 
@@ -150,23 +151,189 @@
                         <form class="label-form">
                             <div class="form-group">
                                 <label for="batchTexts">Texte (einer pro Zeile):</label>
-                                <textarea id="batchTexts" rows="6" placeholder="Server Rack A&#10;Server Rack B&#10;Grid Input&#10;Grid Output&#10;Modbus SM-1" required></textarea>
+                                <textarea id="batchTexts" rows="8" placeholder="Server Rack A&#10;Server Rack B&#10;Grid Input&#10;Grid Output&#10;Modbus SM-1&#10;Network Switch&#10;Power Distribution&#10;Backup System" required></textarea>
+                                <div class="form-help">
+                                    💡 <strong>Tipp:</strong> Jeder Text wird als separates Label gedruckt, aber alle am Stück mit dünnen Trennstrichen.
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="batchFontSize">Schriftgröße:</label>
-                                <input type="range" id="batchFontSize" min="8" max="24" value="14">
-                                <span class="range-value" id="batchFontSizeValue">14px</span>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="batchFontSize">Schriftgröße:</label>
+                                    <input type="range" id="batchFontSize" min="8" max="24" value="16">
+                                    <span class="range-value" id="batchFontSizeValue">16px</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="batchSeparator">Trenner-Breite:</label>
+                                    <input type="range" id="batchSeparator" min="0" max="10" value="2">
+                                    <span class="range-value" id="batchSeparatorValue">2px</span>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="batchSeparator">Trenner-Abstand:</label>
-                                <input type="range" id="batchSeparator" min="2" max="20" value="8">
-                                <span class="range-value" id="batchSeparatorValue">8px</span>
-                            </div>
+                            
                             <div class="batch-preview" id="batchPreview">
-                                <strong>Labels:</strong> <span id="batchCount">0</span>
+                                <div class="preview-header">
+                                    <strong>📋 Batch-Vorschau:</strong>
+                                </div>
+                                <div class="preview-stats">
+                                    <span class="stat">📄 Labels: <strong id="batchCount">0</strong></span>
+                                    <span class="stat">📏 Bandverbrauch: <strong id="tapeUsage">~0cm</strong></span>
+                                </div>
+                                <div class="preview-list" id="batchList"></div>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-large">🖨️ Alle Labels auf einmal drucken</button>
+                            
+                            <div class="batch-actions">
+                                <button type="button" class="btn btn-secondary" id="loadPresetBtn">📋 Preset laden</button>
+                                <button type="button" class="btn btn-secondary" id="clearBatchBtn">🗑️ Alle löschen</button>
+                                <button type="submit" class="btn btn-primary btn-large">🖨️ Batch drucken (kontinuierlich)</button>
+                            </div>
                         </form>
+                        
+                        <!-- Preset Templates -->
+                        <div class="preset-section">
+                            <h4>📋 Schnell-Presets</h4>
+                            <div class="preset-buttons">
+                                <button type="button" class="preset-btn" data-preset="server-rack">🖥️ Server Racks</button>
+                                <button type="button" class="preset-btn" data-preset="network">🌐 Netzwerk</button>
+                                <button type="button" class="preset-btn" data-preset="power">⚡ Stromversorgung</button>
+                                <button type="button" class="preset-btn" data-preset="office">🏢 Büro</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Label Builder -->
+                    <div class="form-panel" id="customForm">
+                        <h3>🎨 Custom Label Builder</h3>
+                        
+                        <!-- Template Selection -->
+                        <div class="template-section">
+                            <h4>📋 Template auswählen oder eigenes erstellen</h4>
+                            <div class="template-grid">
+                                <button type="button" class="template-card" data-template="blank">
+                                    <div class="template-icon">📄</div>
+                                    <div class="template-name">Leeres Label</div>
+                                </button>
+                                <button type="button" class="template-card" data-template="two-line">
+                                    <div class="template-icon">📝</div>
+                                    <div class="template-name">Zwei Zeilen</div>
+                                </button>
+                                <button type="button" class="template-card" data-template="qr-code">
+                                    <div class="template-icon">📱</div>
+                                    <div class="template-name">Mit QR-Code</div>
+                                </button>
+                                <button type="button" class="template-card" data-template="barcode">
+                                    <div class="template-icon">🏷️</div>
+                                    <div class="template-name">Mit Barcode</div>
+                                </button>
+                                <button type="button" class="template-card" data-template="icon-text">
+                                    <div class="template-icon">🏢</div>
+                                    <div class="template-name">Icon + Text</div>
+                                </button>
+                                <button type="button" class="template-card" data-template="table">
+                                    <div class="template-icon">📊</div>
+                                    <div class="template-name">Tabelle</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Label Designer -->
+                        <div class="designer-section">
+                            <h4>🛠️ Label Designer</h4>
+                            
+                            <div class="designer-workspace">
+                                <!-- Canvas Preview -->
+                                <div class="canvas-container">
+                                    <h5>📱 Vorschau</h5>
+                                    <div class="label-canvas" id="labelCanvas">
+                                        <div class="canvas-placeholder">
+                                            Wählen Sie ein Template oder fügen Sie Elemente hinzu
+                                        </div>
+                                    </div>
+                                    <div class="canvas-info">
+                                        Größe: <span id="canvasSize">Auto × 50px</span>
+                                    </div>
+                                </div>
+
+                                <!-- Element Controls -->
+                                <div class="element-controls">
+                                    <h5>➕ Elemente hinzufügen</h5>
+                                    <div class="element-buttons">
+                                        <button type="button" class="element-btn" data-element="text">📝 Text</button>
+                                        <button type="button" class="element-btn" data-element="icon">🎯 Icon</button>
+                                        <button type="button" class="element-btn" data-element="line">➖ Linie</button>
+                                        <button type="button" class="element-btn" data-element="box">⬜ Box</button>
+                                        <button type="button" class="element-btn" data-element="qr">📱 QR-Code</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Element Properties -->
+                            <div class="properties-panel" id="propertiesPanel" style="display: none;">
+                                <h5>⚙️ Element bearbeiten</h5>
+                                <div id="elementProperties">
+                                    <!-- Dynamically populated -->
+                                </div>
+                            </div>
+
+                            <!-- Label Elements List -->
+                            <div class="elements-list">
+                                <h5>📋 Label-Elemente</h5>
+                                <div class="elements-container" id="elementsContainer">
+                                    <div class="no-elements">Keine Elemente hinzugefügt</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Global Label Settings -->
+                        <div class="label-settings">
+                            <h4>⚙️ Label-Einstellungen</h4>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="labelWidth">Label-Breite:</label>
+                                    <input type="range" id="labelWidth" min="100" max="500" value="200">
+                                    <span class="range-value" id="labelWidthValue">200px</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="labelHeight">Label-Höhe:</label>
+                                    <input type="range" id="labelHeight" min="30" max="100" value="50">
+                                    <span class="range-value" id="labelHeightValue">50px</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="labelMargin">Innenabstand:</label>
+                                    <input type="range" id="labelMargin" min="0" max="20" value="5">
+                                    <span class="range-value" id="labelMarginValue">5px</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="labelBackground">Hintergrund:</label>
+                                    <select id="labelBackground">
+                                        <option value="white">⚪ Weiß</option>
+                                        <option value="black">⚫ Schwarz</option>
+                                        <option value="transparent">🔲 Transparent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Template Management -->
+                        <div class="template-management">
+                            <h4>💾 Template verwalten</h4>
+                            <div class="management-controls">
+                                <div class="form-group">
+                                    <label for="templateName">Template-Name:</label>
+                                    <input type="text" id="templateName" placeholder="z.B. Mein Custom Label">
+                                </div>
+                                <div class="management-buttons">
+                                    <button type="button" class="btn btn-secondary" id="saveTemplateBtn">💾 Template speichern</button>
+                                    <button type="button" class="btn btn-secondary" id="loadTemplateBtn">📂 Template laden</button>
+                                    <button type="button" class="btn btn-warning" id="clearCanvasBtn">🗑️ Canvas leeren</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="custom-actions">
+                            <button type="button" class="btn btn-primary btn-large" id="printCustomBtn">🖨️ Custom Label drucken</button>
+                            <button type="button" class="btn btn-secondary" id="exportTemplateBtn">📤 Als Template exportieren</button>
+                        </div>
                     </div>
 
                 </section>
